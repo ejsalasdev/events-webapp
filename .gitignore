@@ -1,0 +1,17 @@
+# Ignorar directorios de bytecode de Python
+__pycache__/
+*.pyc
+
+# Ignorar el entorno virtual
+venv/
+
+# Ignorar archivos de configuración específicos del entorno
+.env
+
+# Ignorar directorio de Alembic
+alembic/
+
+# Otros archivos y directorios a ignorar
+*.log
+*.csv
+*.json

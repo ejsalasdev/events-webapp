@@ -1,6 +1,6 @@
 from typing import Annotated
 from pydantic import Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
@@ -31,7 +31,7 @@ def get_user_by_id(db: Session, user_id: int):
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_users(db: db_dependency):
-    return db.query(User).all()
+    return db.query(User).options(joinedload(User.role)).all()
 
 
 @router.get("/{user_id}", status_code=status.HTTP_200_OK)
@@ -42,7 +42,7 @@ async def get_user(db: db_dependency, user_id: int):
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
 
-    user_role = db.query(Role).filter(Role.role_name == "user").first()
+    user_role = db.query(Role).filter(Role.role_name == "admin").first()
 
     if not user_role:
         raise HTTPException(

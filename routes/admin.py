@@ -112,3 +112,21 @@ async def delete_user(db: db_dependency, user_id: int):
         )
 
     return {"message": "User deleted successfully"}
+
+
+# First littles changes for mod users change password
+@router.put("/change_password/{user_id}", status_code=status.HTTP_200_OK)
+async def change_password(db: db_dependency, user_id: int, password: str):
+    user = get_user_by_id(db, user_id)
+    user.hashed_password = pwd_context.hash(password)
+
+    try:
+        db.commit()
+        db.refresh(user)
+        return {"message": "Password changed successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while changing the password: {e}",
+        )

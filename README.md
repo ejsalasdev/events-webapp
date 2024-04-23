@@ -16,6 +16,12 @@ git clone https://github.com/ejsalasdev/events-webapp
 cd events-webapp
 ```
 
+To install the necessary dependencies for this project, ensure you have Python and pip installed on your system, and then run the following command:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Usage :computer:
 
 Here's how you can use the application:

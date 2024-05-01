@@ -22,7 +22,47 @@ To install the necessary dependencies for this project, ensure you have Python a
 pip install -r requirements.txt
 ```
 
+Create and activate a virtual environment (optional, but recommended)
+
+```python -m venv venv
+source venv/bin/activate  # on Windows use `venv\Scripts\activate`
+```
+
+Database Configuration with SQLite
+
+By default, the application uses SQLite. You do not need to configure additional database settings.
+
+Initial Migrations with Alembic
+
+To set up your database with the necessary migrations, use Alembic:
+
+```
+# Generate the initial migration (this will create a migration script in the 'migrations/versions' folder)
+alembic revision --autogenerate -m "Initial migration"
+
+# Apply the migrations to the database
+alembic upgrade head
+```
+
 ## Usage :computer:
+
+Updating the roles Table
+
+Before you start using the application, it's necessary to populate the roles table with specific role names that the application will use for authorization purposes. Here's how to manually insert the required roles into the database:
+
+```
+# Access your SQLite database
+sqlite3 path_to_database.db
+
+# Insert roles into the 'roles' table
+INSERT INTO roles (role_name) VALUES ('user');
+INSERT INTO roles (role_name) VALUES ('admin');
+INSERT INTO roles (role_name) VALUES ('super');
+
+# Verify that the roles have been inserted
+SELECT * FROM roles;
+```
+
 
 Here's how you can use the application:
 

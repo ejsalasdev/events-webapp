@@ -16,16 +16,16 @@ git clone https://github.com/ejsalasdev/events-webapp
 cd events-webapp
 ```
 
-To install the necessary dependencies for this project, ensure you have Python and pip installed on your system, and then run the following command:
-
-```bash
-pip install -r requirements.txt
-```
-
 Create and activate a virtual environment (optional, but recommended)
 
 ```python -m venv venv
 source venv/bin/activate  # on Windows use `venv\Scripts\activate`
+```
+
+To install the necessary dependencies for this project, ensure you have Python and pip installed on your system, and then run the following command:
+
+```bash
+pip install -r requirements.txt
 ```
 
 Database Configuration with SQLite

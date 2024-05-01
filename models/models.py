@@ -11,6 +11,7 @@ class User(Base):
     last_name = Column(String)
     phone_number = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
+    username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = relationship("Role", secondary="users_roles")
 

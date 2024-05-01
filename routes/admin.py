@@ -4,80 +4,58 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
-from config.database import SessionLocal, get_db
-from models.models import User, Role
-from passlib.context import CryptContext
-
-from schemas.schemas import CreateUserRequest, UserUpdateRequest
+from config.database import get_db
+from models.models import User
+from .auth import get_current_user
+from .common import get_user_by_identification
+from schemas.schemas import UserUpdateRequest
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 # This dependency is used to get a database session.
 db_dependency = Annotated[Session, Depends(get_db)]
+# This dependency is used to get a validate admin.
+user_admin_dependency = Annotated[User, Depends(get_current_user)]
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-
-# This function is used to get a user by id.
-def get_user_by_id(db: Session, user_id: int):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
+# This function is used to get a validate admin.
+def get_admin(user_admin: User):
+    admin_role = any(role.role_name == "admin" for role in user_admin.role)
+    if not admin_role:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
         )
-    return user
+    return user_admin
 
 
+# This function is used to get all users.
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_users(db: db_dependency):
+async def get_users(db: db_dependency, user: user_admin_dependency):
+    get_admin(user)
+
     return db.query(User).options(joinedload(User.role)).all()
 
 
-@router.get("/{user_id}", status_code=status.HTTP_200_OK)
-async def get_user(db: db_dependency, user_id: int):
-    return get_user_by_id(db, user_id)
-
-
-@router.post("/register/", status_code=status.HTTP_201_CREATED)
-async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
-
-    user_role = db.query(Role).filter(Role.role_name == "admin").first()
-
-    if not user_role:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User role not found"
-        )
-
-    create_user_model = User(
-        identification=create_user_request.identification,
-        first_name=create_user_request.first_name,
-        last_name=create_user_request.last_name,
-        phone_number=create_user_request.phone_number,
-        email=create_user_request.email,
-        hashed_password=pwd_context.hash(create_user_request.password),
-        role=[user_role],
-    )
-
-    try:
-        db.add(create_user_model)
-        db.commit()
-        db.refresh(create_user_model)
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while creating the user: {e}",
-        )
-
-    return {"message": "User created successfully"}
-
-
-@router.put("/{user_id}", status_code=status.HTTP_200_OK)
-async def update_user(
-    db: db_dependency, user_id: int, user_update_request: UserUpdateRequest
+# This function is used to get a unique user by identification.
+@router.get("/{user_identification}", status_code=status.HTTP_200_OK)
+async def get_user(
+    db: db_dependency, user_identification: str, user: user_admin_dependency
 ):
-    user_to_update = get_user_by_id(db, user_id)
+    get_admin(user)
+    return get_user_by_identification(db, user_identification)
+
+
+# This function is used to update a user.
+@router.put("/{user_identification}", status_code=status.HTTP_200_OK)
+async def update_user(
+    db: db_dependency,
+    user_identification: str,
+    user_update_request: UserUpdateRequest,
+    user: user_admin_dependency,
+):
+    get_admin(user)
+    user_to_update = get_user_by_identification(db, user_identification)
 
     update_data = user_update_request.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -96,10 +74,14 @@ async def update_user(
     return {"message": "User updated successfully"}
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_200_OK)
-async def delete_user(db: db_dependency, user_id: int):
+# This function is used to delete a user.
+@router.delete("/{user_identification}", status_code=status.HTTP_200_OK)
+async def delete_user(
+    db: db_dependency, user_identification: str, user: user_admin_dependency
+):
+    get_admin(user)
 
-    user_to_delete = get_user_by_id(db, user_id)
+    user_to_delete = get_user_by_identification(db, user_identification)
 
     try:
         db.delete(user_to_delete)
@@ -112,21 +94,3 @@ async def delete_user(db: db_dependency, user_id: int):
         )
 
     return {"message": "User deleted successfully"}
-
-
-# First littles changes for mod users change password
-@router.put("/change_password/{user_id}", status_code=status.HTTP_200_OK)
-async def change_password(db: db_dependency, user_id: int, password: str):
-    user = get_user_by_id(db, user_id)
-    user.hashed_password = pwd_context.hash(password)
-
-    try:
-        db.commit()
-        db.refresh(user)
-        return {"message": "Password changed successfully"}
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while changing the password: {e}",
-        )

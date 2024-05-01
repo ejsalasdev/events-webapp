@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from models import models
 from config.database import engine
-from routes import admin, users
+from routes import admin, users, auth
 
 from fastapi.templating import Jinja2Templates
 
@@ -14,6 +14,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app.include_router(admin.router)
 app.include_router(users.router)
+app.include_router(auth.router)
 
 
 @app.get("/")

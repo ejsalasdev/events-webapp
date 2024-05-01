@@ -1,10 +1,9 @@
 from typing import Annotated
-from pydantic import Field
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
-from config.database import SessionLocal, get_db
+from config.database import get_db
 from models.models import User, Role
 from schemas.schemas import CreateUserRequest
 
